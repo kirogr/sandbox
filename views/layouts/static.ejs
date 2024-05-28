@@ -1,0 +1,93 @@
+<style>
+    .hidden { display: none; }
+    .collapsible { cursor: pointer; user-select: none; background-color: #eee; border: none; text-align: left; outline: none; font-size: 15px; padding: 10px; }
+    .active, .collapsible:hover { background-color: #ccc; }
+    .collapsible-content { display: none; padding: 0 18px; overflow: hidden; background-color: #f9f9f9; margin-bottom: 10px; }
+    .list-item { margin: 5px 0; }
+</style>
+<main class="flex-1 p-6" id="mainContent">
+    <div class="bg-white p-4 shadow rounded-lg">
+        <h2 class="text-lg font-bold mb-4 text-center">Static Analysis | <%= submission.originalName %></h2>
+        
+        <div class="mb-4">
+            <h3 class="font-semibold text-md mb-2">Application Details</h3>
+            <p>Filename: <%= submission.staticData.App.filename %></p>
+            <p>Size: <%= submission.staticData.App.size %> bytes</p>
+            <p>Kind: <%= submission.staticData.App.kind %></p>
+            <p>Extension: <%= submission.staticData.App.extension %></p>
+        </div>
+        
+        <div class="mb-4">
+            <h3 class="font-semibold text-md mb-2 collapsible">PE Header</h3>
+            <div class="collapsible-content">
+                <p>Machine: <%= submission.staticData.PE_Header.Machine %></p>
+                <p>TimeDateStamp: <%= submission.staticData.PE_Header.TimeDateStamp %></p>
+                <p>EntryPoint: <%= submission.staticData.PE_Header.EntryPoint %></p>
+                <p>File Characteristics:</p>
+                <% submission.staticData.PE_Header.FileCharacteristics.forEach(function(char) { %>
+                    <div class="list-item">- <%= char %></div>
+                <% }) %>
+                <p>DLL Characteristics:</p>
+                <% submission.staticData.PE_Header.DllCharacteristics.forEach(function(char) { %>
+                    <div class="list-item">- <%= char %></div>
+                <% }) %>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h3 class="font-semibold text-md mb-2 collapsible">Imports</h3>
+            <div class="collapsible-content">
+                <% for(var key in submission.staticData.Imports) { %>
+                    <button class="collapsible"><%= key %></button>
+                    <div class="collapsible-content">
+                        <% submission.staticData.Imports[key].forEach(function(func) { %>
+                            <p><%= func %></p>
+                        <% }) %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h3 class="font-semibold text-md mb-2 collapsible">PDB Paths</h3>
+            <div class="collapsible-content">
+                <% submission.staticData.PDB_Paths.forEach(function(path, index) { %>
+                    <button class="collapsible">Path <%= index + 1 %></button>
+                    <div class="collapsible-content">
+                        <p><%= path %></p>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h3 class="font-semibold text-md mb-2 collapsible">Subsystem</h3>
+            <div class="collapsible-content">
+                <p><%= submission.staticData.Subsystem %></p>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h3 class="font-semibold text-md mb-2 collapsible">Signature</h3>
+            <div class="collapsible-content">
+                <p>Is Signed: <%= submission.staticData.Signature.is_signed ? 'Yes' : 'No' %></p>
+                <p>Signer: <%= submission.staticData.Signature.signer %></p>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    document.querySelectorAll('.collapsible').forEach(function(collapsible) {
+        collapsible.addEventListener('click', function() {
+            this.classList.toggle('active');
+            var content = this.nextElementSibling;
+            if (content.style.display === 'block') {
+                content.style.display = 'none';
+            } else {
+                content.style.display = 'block';
+            }
+        });
+    });
+</script>

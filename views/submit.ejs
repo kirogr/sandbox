@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit File for Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.3/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a4c00a89bc.js" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gray-100">
+    <%- include('./layouts/header.ejs') %>
+    <main class="flex justify-center items-center p-6 w-full min-h-screen">
+        <div class="w-full max-w-2xl">
+            <div class="bg-white p-4 shadow rounded-lg mb-6">
+                <h2 class="text-lg font-bold mb-2">Submit File for Analysis <i class="fas fa-upload"></i></h2>
+                <form id="fileUploadForm">
+                    <label for="file" class="block mb-2 text-sm font-medium text-gray-700">Choose file to upload:</label>
+                    <input type="file" id="file" name="file" class="block w-full text-sm text-gray-700 border border-gray-300 rounded-lg p-2.5 mb-6" required>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Upload <i class="fas fa-cloud-upload-alt"></i></button>
+                </form>
+                <div id="loading" class="hidden mt-4 text-blue-500" aria-live="polite">
+                    <i class="fas fa-spinner fa-spin"></i> Pre-processing submission, this might take a few seconds...
+                </div>
+                <div id="feedback" class="hidden mt-4 text-red-500" aria-live="polite"></div>
+            </div>
+            <div class="bg-white p-4 shadow rounded-lg">
+                <h2 class="text-lg font-bold mb-2">System Statistics <i class="fas fa-chart-line"></i></h2>
+                <ul>
+                    <li><i class="fas fa-file-alt"></i> Total files uploaded: <strong><%= totalFiles %> samples</strong></li>
+                    <li><i class="fas fa-server"></i> Virtual machines running: <strong><%= totalVms %> machines</strong></li>
+                    <li><i class="fas fa-clock"></i> Analyses pending: <strong><%= totalPending %></i></strong></li>
+                    <li><i class="fas fa-check-circle"></i> Analyses confirmed: <strong><%= totalConfirmed %></strong></li>
+                </ul>
+            </div>
+        </div>
+    </main>
+    <script>
+        document.getElementById('fileUploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const loadingDiv = document.getElementById('loading');
+            const feedbackDiv = document.getElementById('feedback');
+            
+            loadingDiv.classList.remove('hidden');
+            feedbackDiv.classList.add('hidden');
+
+            fetch('/submit', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.classList.add('hidden');
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    feedbackDiv.textContent = 'Submission was successful but there was an issue redirecting.';
+                    feedbackDiv.classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loadingDiv.classList.add('hidden');
+                feedbackDiv.textContent = 'There was an error processing your submission.';
+                feedbackDiv.classList.remove('hidden');
+            });
+        });
+    </script>
+</body>
+</html>

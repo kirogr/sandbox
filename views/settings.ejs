@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Settings</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.3/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <main class="flex justify-center items-center p-6 w-full min-h-screen">
+        <div class="w-full max-w-4xl bg-white p-8 shadow rounded-lg">
+            <h2 class="text-2xl font-bold mb-6">Profile Settings</h2>
+            <div class="flex mb-6">
+                <div class="mr-4">
+                    <img id="avatarPreview" src="<%= user.avatar %>" alt="User Avatar" class="w-24 h-24 rounded-full">
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold">Avatar</h3>
+                    <input type="file" id="avatar" name="avatar" accept="image/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2.5" onchange="previewAvatar()">
+                </div>
+            </div>
+            <form id="settingsForm">
+                <div class="mb-6">
+                    <label for="username" class="block mb-2 text-sm font-medium text-gray-700">Username:</label>
+                    <input type="text" id="username" name="username" value="<%= user.username %>" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2.5" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block mb-2 text-sm font-medium text-gray-700">New Password:</label>
+                    <input type="password" id="password" name="password" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2.5">
+                </div>
+                <div class="mb-6">
+                    <label for="confirmPassword" class="block mb-2 text-sm font-medium text-gray-700">Confirm New Password:</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg p-2.5">
+                </div>
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Update Profile</button>
+            </form>
+        </div>
+    </main>
+    <script>
+        function previewAvatar() {
+            const file = document.getElementById('avatar').files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatarPreview').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('settingsForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            if (document.getElementById('password').value !== document.getElementById('confirmPassword').value) {
+                alert('Passwords do not match!');
+                return;
+            }
+            const formData = new FormData(this);
+            fetch('/updateProfile', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Profile updated successfully!');
+                } else {
+                    alert('Failed to update profile.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('There was an error updating your profile.');
+            });
+        });
+    </script>
+</body>
+</html>
