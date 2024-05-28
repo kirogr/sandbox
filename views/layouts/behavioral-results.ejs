@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Log</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .log-container {
+            max-height: 80vh; /* Set a maximum height for the container */
+            overflow-y: auto; /* Enable vertical scrolling */
+            background-color: rgba(0, 0, 0, 0.05); /* Add a gray background to the container */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow to the container */
+        }
+
+        .filter-button {
+            transition: background-color 0.3s;
+        }
+
+        .filter-button.active {
+            background-color: #4299e1;
+        }
+
+        .sort-icon {
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-5">
+        <h1 class="text-xl font-bold mb-4">Analysis Log</h1>
+        <div class="mb-4">
+            <input type="text" id="searchInput" class="border border-gray-500 p-2 rounded-md w-full mb-2" placeholder="Search...">
+            <div class="flex flex-wrap gap-2">
+                <button class="filter-button bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" id="filterFileOpen">CreateFile</button>
+                <button class="filter-button bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" id="filterFileClose">CloseFile</button>
+                <button class="filter-button bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" id="filterProccesCreate">Process Create</button>
+            </div>
+        </div>
+        <div class="log-container">
+            <table id="logTable" class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time <span class="sort-icon">&darr;</span></th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PID <span class="sort-icon">&darr;</span></th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Process <span class="sort-icon">&darr;</span></th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name <span class="sort-icon">&darr;</span></th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Type <span class="sort-icon">&darr;</span></th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operation <span class="sort-icon">&darr;</span></th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Path <span class="sort-icon">&darr;</span></th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(){
+
+            function fetchData(start, stop) {
+                fetch(`/api/events?submission=<%= submission._id %>&start=${start}&stop=${stop}`)
+                    .then(response => {
+                        if (response.status == 500) {
+                            $(".log-container").empty();
+                            const message = $("<p>").text(`Something went wrong.`).addClass("text-red-500 text-center mt-4");
+                            $(".log-container").append(message);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        populateTable(data);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+            }
+
+
+            // Function to populate the table with data
+            function populateTable(data) {
+                var tbody = $('#logTable tbody');
+                tbody.empty(); // Clear existing rows
+                
+                // Iterate through data and create rows
+                $.each(data, function(index, item) {
+                    var row = '<tr>' +
+                        '<td class="px-6 py-4 whitespace-nowrap">' + Math.floor(item.time / 10000) + '</td>' +
+                        '<td class="px-6 py-4 whitespace-nowrap">' + item.pid + '</td>' +
+                        '<td class="px-6 py-4 whitespace-nowrap">' + item.process + '</td>' +
+                        '<td class="px-6 py-4 whitespace-nowrap">' + item.displayName + '</td>' +
+                        '<td class="px-6 py-4 whitespace-nowrap">' + item.eventType + '</td>' +
+                        '<td class="px-6 py-4 whitespace-nowrap">' + item.operation + '</td>' +
+                        '<td class="px-6 py-4 whitespace-nowrap">' + item.path + '</td>' +
+                        '</tr>';
+                    tbody.append(row);
+                });
+            }
+
+
+            // Function to filter table rows based on search input
+            $('#searchInput').on('input', function() {
+                var searchValue = $(this).val().toLowerCase();
+                var rows = $('#logTable tbody tr');
+
+                rows.each(function() {
+                    var text = $(this).text().toLowerCase();
+                    if (text.includes(searchValue)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+
+            // Function to filter table rows by name
+            $('.filter-button').on('click', function() {
+                var name = $(this).text();
+                $(this).toggleClass('active');
+                if ($(this).hasClass('active')) {
+                    filterByName(name);
+                } else {
+                    $('#logTable tbody tr').show();
+                }
+            });
+
+            // Helper function to filter table rows by name
+            function filterByName(name) {
+                console.log(name.length);
+                $('#logTable tbody tr').hide();
+                $('#logTable tbody tr').each(function() {
+                    var cell = $(this).find('td:nth-child(2)'); // Second column contains the name
+                    var text = cell.text().trim();
+                    if (text === name) {
+                        $(this).show();
+                    }
+                });
+            }
+
+            // Function to handle sorting by column
+            function sortTable() {
+                var columnIndex = $(this).index(); // Get column index
+                var rows = $('#logTable tbody tr').get();
+
+                rows.sort(function(a, b) {
+                    var keyA = $(a).children('td').eq(columnIndex).text().toUpperCase();
+                    var keyB = $(b).children('td').eq(columnIndex).text().toUpperCase();
+
+                    if (keyA < keyB) return -1;
+                    if (keyA > keyB) return 1;
+                    return 0;
+                });
+
+                // Reverse the order if already sorted in ascending order
+                if ($(this).hasClass('sorted')) {
+                    rows.reverse();
+                    $(this).removeClass('sorted');
+                    $(this).children('.sort-icon').text('↓');
+                } else {
+                    $(this).addClass('sorted');
+                    $(this).children('.sort-icon').text('↑');
+                }
+
+                // Re-append rows after sorting
+                $.each(rows, function(index, row) {
+                    $('#logTable tbody').append(row);
+                });
+            }
+
+            // Event listener for sorting icons
+            $('.sort-icon').on('click', sortTable);
+
+            fetchData(0, 0);
+
+        });
+
+            // Call the fetchData function with start and stop parameters        
+        
+    </script>
+</body>
+</html>

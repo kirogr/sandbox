@@ -1,0 +1,107 @@
+<style>
+   #wmksContainer {
+        position: relative; /* Change position to absolute */
+        width: 800px;
+        height: 800px;
+    }
+</style>
+
+<div class="container mx-auto p-5">
+    <h1 class="text-xl font-bold mb-4">File Submission Details</h1>
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <p class="text-sm font-bold text-gray-700 mb-2">Filename: <%= submission.staticData.App.filename %></p>
+        <p class="text-sm text-gray-700 mb-2">Size: <%= submission.staticData.App.size %></p>
+        <p class="text-sm text-gray-700 mb-2">Type: <%= submission.staticData.App.extension %></p>
+        <p class="text-sm text-gray-700 mb-2">Uploaded: <%= submission.staticData.App.createdAt %></p>
+    </div>
+
+    <h1 class="text-xl font-bold mb-4">Behavioral Analysis Setup</h1>
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <p class="text-m" id="timeout">0</p>
+        <div id="wmksContainer"></div>
+        <button id="terminate" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Terminate
+        </button>
+    </div>
+</div>
+
+
+<script>
+    var wmks = null; // global env 
+ 
+    function createWMKS() {
+        var options = {
+            rescale: true,
+            changeResolution: false,
+            position: 0
+        }
+    
+        wmks = WMKS.createWMKS("wmksContainer", options);
+        console.log("WMKS created successfully");
+    }
+ 
+    function connect() {
+        if(!wmks) {
+            alert("Please create WMKS first!");
+            return;
+        }
+    
+        var host = "192.168.1.195";
+        var port = "443";
+        var ticket = "<%= ticket %>";
+        var url = "wss://" + host + ":" + port + "/ticket/" + ticket ;
+        try {
+            wmks.connect(url);
+            console.log('connect succeeded');
+        } catch (err) {
+            console.log('connect failed: ' + err);
+        }
+    }
+    
+    $(document).ready(function(){
+        createWMKS();
+        connect();
+        console.log("im here");
+
+        $("#terminate").click(function(){
+            $.post("/api/terminate?submission=<%= submission._id %>", function(data, status){
+                if(status != "success") {
+                    alert("Something went wrong. Please try to shut down the virtual machine.");
+                }
+
+                setTimeout(() => {                
+                    window.location.reload();
+                }, 3200);
+            });
+        });
+    });
+
+    function updateCountdown(start_time, end_time) {
+        var current_time = Math.floor(Date.now() / 1000); // Current UNIX timestamp in seconds
+        var remaining = end_time - current_time;
+        
+        if (remaining <= 0) {
+            document.getElementById('timeout').innerHTML = "Subscription Expired";
+        } else {
+            var minutes = Math.floor(remaining / 60);
+            var seconds = remaining % 60;
+            
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            var countdownStr = minutes + ":" + seconds;
+            document.getElementById('timeout').innerHTML = `<b>Time Remaining:</b> ` + countdownStr;
+            
+            // Update countdown every second
+            setTimeout(function() {
+                updateCountdown(start_time, end_time);
+            }, 1000);
+        }
+    }
+
+    var start_time = Math.floor(<%= startTime %>);
+    var end_time = Math.floor(<%= endTime %>);
+
+    updateCountdown(start_time, end_time);
+
+ </script>

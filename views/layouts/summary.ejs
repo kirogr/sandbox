@@ -1,0 +1,37 @@
+<style>
+    .collapsible { cursor: pointer; user-select: none; background-color: #eee; border: none; text-align: left; outline: none; font-size: 15px; padding: 10px; }
+    .active, .collapsible:hover { background-color: #ccc; }
+    .collapsible-content { padding: 0 18px; overflow: hidden; background-color: #f9f9f9; margin-bottom: 10px; }
+    .list-item { margin: 5px 0; }
+</style>
+
+<div class="flex">
+    <!-- Main Content -->
+    <main class="flex-1 p-6 bg-white shadow rounded-lg ml-4">
+        <h2 class="text-lg font-bold mb-4 text-center">Summary | <%= submission.originalName %></h2>
+        
+        <div class="mb-4">
+            <h3 class="font-semibold text-md mb-2">Application Details</h3>
+            <p>Filename: <%= submission.staticData.App.filename %></p>
+            <p>Size: <%= submission.staticData.App.size %> bytes</p>
+            <p>Kind: <%= submission.staticData.App.kind %></p>
+            <p>Extension: <%= submission.staticData.App.extension %></p>
+            <p>MD5: <%= submission.staticData.File_Hashes.md5 %></p>
+            <p>SHA1: <%= submission.staticData.File_Hashes.sha1 %></p>
+            <p>SHA256: <%= submission.staticData.File_Hashes.sha256 %></p>
+            <p>SHA512: <%= submission.staticData.File_Hashes.sha512 %></p>
+        </div>
+    </main>
+
+    <div class="w-1/4 bg-white p-4 shadow rounded-lg m-5">
+        <div class="text-center">
+            <div class="text-lg font-bold mb-4">Score</div>
+            <div class="text-4xl" id="task-score" data-file-score="">
+                <%= submission.staticScore + submission.behavioralScore %><sup class="text-sm">/10</sup>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                <div id="task-score-bar" class="bg-blue-600 h-2.5 rounded-full" style="width:<%= (submission.staticScore + submission.behavioralScore)*10 %>%"></div>
+            </div>
+        </div>
+    </div>
+</div>
